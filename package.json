@@ -1,8 +1,8 @@
 {
-  "name": "goit-react-hw-03-image-finder",
+  "name": "goit-react-hw-04-images",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://shegadev.github.io/goit-react-hw-03-image-finder",
+  "homepage": "https://shegadev.github.io/goit-react-hw-04-images",
   "dependencies": {
     "@types/jest": "^27.5.2",
     "@types/node": "^16.18.48",
