@@ -1,27 +1,22 @@
 import { MouseEvent, useEffect } from 'react';
-import type { ModalState } from '../app/App';
-type Props = {
-  modal: ModalState;
-  closeModal: () => void;
-};
+import type { ModalProps } from '@types';
 
-const Modal = ({ modal, closeModal }: Props) => {
+const Modal = ({ modal, closeModal }: ModalProps) => {
   const closeOverlayModal = (e: MouseEvent) => {
     if (e.target === e.currentTarget) {
       closeModal();
     }
   };
 
-  const closeKeyboardModal = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') closeModal();
-  };
-
   useEffect(() => {
+    const closeKeyboardModal = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeModal();
+    };
     document.addEventListener('keydown', closeKeyboardModal);
     return () => {
       document.removeEventListener('keydown', closeKeyboardModal);
     };
-  }, []);
+  }, [closeModal]);
 
   return (
     <div

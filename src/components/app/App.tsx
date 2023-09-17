@@ -6,64 +6,39 @@ import Modal from '../modal/Modal';
 import Button from '../button/Button';
 import fetchImages from '../../services/api';
 import { isAxiosError } from 'axios';
+import type { ModalState, Image } from '@types';
 
-export type Image = {
-  id: string;
-  tags: string;
-  webformatURL: string;
-  largeImageURL: string;
-};
-type Page = number;
-type Query = string;
-type Error = string | null;
-type Loading = boolean;
-type DataState = {
-  images: Image[];
-  totalPages: number;
-  total: number;
-};
-export type ModalState = {
-  imageURL: string;
-  title: string;
-};
 const App = () => {
-  const [error, setError] = useState(null as Error);
-  const [isLoading, setIsLoading] = useState(false as Loading);
+  const [error, setError] = useState(null as string | null);
+  const [isLoading, setIsLoading] = useState(false);
   const [modal, setModal] = useState({ imageURL: '', title: '' } as ModalState);
-  const [data, setData] = useState({ images: [], totalPages: 1, total: 0 } as DataState);
-  const [query, setQuery] = useState('' as Query);
-  const [page, setPage] = useState(1 as Page);
+  const [images, setImages] = useState([] as Image[]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
 
-  const sendQuery = (q: Query) => {
+  const sendQuery = (q: string) => {
     setError(null);
     setQuery(q);
     setPage(1);
-    setData((prev) => {
-      return {
-        ...prev,
-        images: [],
-      };
-    });
-  };
-
-  const search = async () => {
-    try {
-      const { totalHits, hits } = await fetchImages({ query, page });
-      setData((prev) => {
-        return {
-          images: [...prev.images, ...(hits as Image[])],
-          total: totalHits,
-          totalPages: Math.ceil(totalHits / 12),
-        };
-      });
-    } catch (e) {
-      if (isAxiosError(e)) setError(e.message);
-    } finally {
-      setIsLoading(false);
-    }
+    setImages([]);
   };
 
   useEffect(() => {
+    const search = async () => {
+      try {
+        const { totalHits, hits } = await fetchImages({
+          query,
+          page,
+        });
+        setImages((prev) => [...prev, ...(hits as Image[])]);
+        setTotalPages(Math.ceil(totalHits / 12));
+      } catch (e) {
+        if (isAxiosError(e)) setError(e.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
     if (query !== '') {
       setIsLoading(true);
       search();
@@ -80,9 +55,9 @@ const App = () => {
     <div className='grid grid-cols-1 gap-[16px] pb-[24px]'>
       <SearchBar sendQuery={sendQuery} />
       {error && <h2 className='mx-auto'>Error: {error}</h2>}
-      {data.images.length !== 0 && <ImageGallery images={data.images} selectImage={selectImage} />}
+      {images.length !== 0 && <ImageGallery images={images} selectImage={selectImage} />}
       {isLoading && <Loader />}
-      {data.totalPages !== 0 && page !== data.totalPages && <Button changePage={changePage} />}
+      {totalPages !== 0 && page !== totalPages && <Button changePage={changePage} />}
       {modal.imageURL && <Modal modal={modal} closeModal={closeModal} />}
     </div>
   );

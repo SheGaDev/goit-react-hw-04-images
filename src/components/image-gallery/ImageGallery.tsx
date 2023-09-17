@@ -1,13 +1,7 @@
 import ImageGalleryItem from '../image-gallery-item/ImageGalleryItem';
-import type { Image } from '../app/App';
+import type { GalleryProps } from '@types';
 
-const ImageGallery = ({
-  images,
-  selectImage,
-}: {
-  images: Image[] | null;
-  selectImage: (imageURL: string, title: string) => void;
-}) => {
+const ImageGallery = ({ images, selectImage }: GalleryProps) => {
   return (
     <div>
       <ul className='max-w-{calc(100vw - 48px)} mx-auto my-0 grid list-none grid-cols-3 gap-[16px] p-0'>
