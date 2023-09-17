@@ -6,7 +6,7 @@ const ImageGallery = ({
   selectImage,
 }: {
   images: Image[] | null;
-  selectImage: (url: string, tags: string) => void;
+  selectImage: (imageURL: string, title: string) => void;
 }) => {
   return (
     <div>

@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useEffect, useState } from 'react';
 import SearchBar from '../search/SearchBar';
 import Loader from '../loader/Loader';
 import ImageGallery from '../image-gallery/ImageGallery';
@@ -7,115 +7,85 @@ import Button from '../button/Button';
 import fetchImages from '../../services/api';
 import { isAxiosError } from 'axios';
 
-type State = {
-  error: string | null;
-  isLoading: boolean;
-  page: number;
-  totalPages: number;
-  total: number;
-  images: Image[];
-  query: string;
-  modal: ModalState;
-};
 export type Image = {
   id: string;
   tags: string;
   webformatURL: string;
   largeImageURL: string;
 };
-type ModalState = {
-  selected: boolean;
-  webformatURL: string;
-  tags: string;
+type Page = number;
+type Query = string;
+type Error = string | null;
+type Loading = boolean;
+type DataState = {
+  images: Image[];
+  totalPages: number;
+  total: number;
 };
+export type ModalState = {
+  imageURL: string;
+  title: string;
+};
+const App = () => {
+  const [error, setError] = useState(null as Error);
+  const [isLoading, setIsLoading] = useState(false as Loading);
+  const [modal, setModal] = useState({ imageURL: '', title: '' } as ModalState);
+  const [data, setData] = useState({ images: [], totalPages: 1, total: 0 } as DataState);
+  const [query, setQuery] = useState('' as Query);
+  const [page, setPage] = useState(1 as Page);
 
-class App extends Component {
-  state: State = {
-    error: null,
-    isLoading: false,
-    page: 1,
-    totalPages: 1,
-    total: 0,
-    images: [],
-    query: '',
-    modal: {
-      selected: false,
-      webformatURL: '',
-      tags: '',
-    },
+  const sendQuery = (q: Query) => {
+    setError(null);
+    setQuery(q);
+    setPage(1);
+    setData((prev) => {
+      return {
+        ...prev,
+        images: [],
+      };
+    });
   };
 
-  componentDidUpdate = (_: unknown, prevState: Readonly<State>) => {
-    if (this.state.page !== prevState.page || this.state.query !== prevState.query) {
-      this.setState({ isLoading: true });
-      this.search();
-    }
-  };
-
-  sendQuery = (query: string) => {
-    this.setState({ query, page: 1, error: null, images: [] });
-  };
-
-  search = async () => {
-    const { page, query } = this.state;
+  const search = async () => {
     try {
-      const { totalHits, hits } = await fetchImages({
-        page,
-        query,
-      });
-      this.setState((prev: Pick<State, keyof State>): Pick<State, keyof State> => {
+      const { totalHits, hits } = await fetchImages({ query, page });
+      setData((prev) => {
         return {
+          images: [...prev.images, ...(hits as Image[])],
           total: totalHits,
           totalPages: Math.ceil(totalHits / 12),
-          images: [...prev.images, ...(hits as Image[])],
-        } as State;
+        };
       });
-    } catch (error) {
-      if (isAxiosError(error)) this.setState({ error: error.message });
+    } catch (e) {
+      if (isAxiosError(e)) setError(e.message);
     } finally {
-      this.setState({ isLoading: false });
+      setIsLoading(false);
     }
   };
 
-  changePage = () => {
-    this.setState((prev: Pick<State, keyof State>): Pick<State, keyof State> => {
-      return { page: prev.page + 1 } as State;
-    });
-  };
+  useEffect(() => {
+    if (query !== '') {
+      setIsLoading(true);
+      search();
+    }
+  }, [page, query]);
 
-  selectImage = (url: string, alt: string) => {
-    this.setState({
-      modal: {
-        selected: true,
-        webformatURL: url,
-        tags: alt,
-      },
-    });
-  };
+  const changePage = () => setPage((prev) => prev + 1);
 
-  closeModal = () => {
-    this.setState({
-      modal: {
-        selected: false,
-        webformatURL: '',
-        tags: '',
-      },
-    });
-  };
+  const selectImage = (imageURL: string, title: string) => setModal({ imageURL, title });
 
-  render() {
-    const { isLoading, images, totalPages, page, error, modal } = this.state;
-    return (
-      <div className='grid grid-cols-1 gap-[16px] pb-[24px]'>
-        <SearchBar sendQuery={this.sendQuery} />
-        {error && <h2 className='mx-auto'>Error: {error}</h2>}
-        {images.length !== 0 && <ImageGallery images={images} selectImage={this.selectImage} />}
-        {isLoading && <Loader />}
-        {totalPages !== 0 && page !== totalPages && <Button changePage={this.changePage} />}
-        {modal.selected && <Modal modal={modal} closeModal={this.closeModal} />}
-      </div>
-    );
-  }
-}
+  const closeModal = () => setModal({ imageURL: '', title: '' });
+
+  return (
+    <div className='grid grid-cols-1 gap-[16px] pb-[24px]'>
+      <SearchBar sendQuery={sendQuery} />
+      {error && <h2 className='mx-auto'>Error: {error}</h2>}
+      {data.images.length !== 0 && <ImageGallery images={data.images} selectImage={selectImage} />}
+      {isLoading && <Loader />}
+      {data.totalPages !== 0 && page !== data.totalPages && <Button changePage={changePage} />}
+      {modal.imageURL && <Modal modal={modal} closeModal={closeModal} />}
+    </div>
+  );
+};
 
 export default App;

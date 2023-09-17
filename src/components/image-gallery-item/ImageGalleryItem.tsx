@@ -7,7 +7,7 @@ const ImageGalleryItem = ({
   image: string;
   largeImage: string;
   alt: string;
-  selectImage: (url: string, tags: string) => void;
+  selectImage: (imageURL: string, title: string) => void;
 }) => {
   return (
     <li className='rounded-[2px] shadow' onClick={() => selectImage(largeImage, alt)}>
